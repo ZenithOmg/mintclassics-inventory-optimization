@@ -1,0 +1,83 @@
+## Approach
+
+### Step 1: Inventory Distribution and Warehouse Utilization
+**Goal**: Understand the distribution of products across warehouses and evaluate warehouse capacity utilization to identify underutilized warehouses.
+
+**SQL Queries:**
+
+- **List products and their storage locations:**
+  ```sql
+  SELECT p.productCode, p.productName, p.warehouseCode, w.warehouseName
+  FROM products p
+  JOIN warehouses w ON p.warehouseCode = w.warehouseCode;
+  ```
+
+- **Count products per warehouse:**
+  ```sql
+  SELECT p.warehouseCode, w.warehouseName, COUNT(p.productCode) AS productCount
+  FROM products p
+  JOIN warehouses w ON p.warehouseCode = w.warehouseCode
+  GROUP BY p.warehouseCode, w.warehouseName;
+  ```
+
+- **Evaluate warehouse capacity utilization:**
+  ```sql
+  SELECT p.warehouseCode, w.warehouseName, SUM(p.quantityInStock) AS totalQuantity, w.warehousePctCap
+  FROM products p
+  JOIN warehouses w ON p.warehouseCode = w.warehouseCode
+  GROUP BY p.warehouseCode, w.warehouseName, w.warehousePctCap;
+  ```
+
+### Step 2: Inventory vs. Sales Analysis
+**Goal:** Analyze how inventory numbers relate to sales figures to assess whether inventory counts are appropriate for each item.
+
+**SQL Queries:**
+
+- **Total sales for each product:**
+  ```sql
+  SELECT od.productCode, p.productName, SUM(od.quantityOrdered) AS totalSold
+  FROM orderdetails od
+  JOIN products p ON od.productCode = p.productCode
+  GROUP BY od.productCode, p.productName;
+  ```
+
+- **Compare inventory to sales:**
+  ```sql
+  SELECT p.productCode, p.productName, p.quantityInStock, IFNULL(s.totalSold, 0) AS totalSold
+  FROM products p
+  LEFT JOIN (
+    SELECT od.productCode, SUM(od.quantityOrdered) AS totalSold
+    FROM orderdetails od
+    GROUP BY od.productCode
+  ) s ON p.productCode = s.productCode;
+  ```
+
+### Step 3: Identify Slow-Moving or Non-Moving Items
+**Goal:** Identify items that are not selling well or at all, and determine if they should be candidates for being dropped from the product line.
+
+**SQL Queries:**
+
+- **Identify products with low or no sales:**
+  ```sql
+  SELECT p.productCode, p.productName, p.quantityInStock, IFNULL(s.totalSold, 0) AS totalSold
+  FROM products p
+  LEFT JOIN (
+    SELECT od.productCode, SUM(od.quantityOrdered) AS totalSold
+    FROM orderdetails od
+    GROUP BY od.productCode
+  ) s ON p.productCode = s.productCode
+  WHERE IFNULL(s.totalSold, 0) = 0;
+  ```
+
+- **Determine slow-moving products (e.g., sold less than a threshold over a period):**
+  ```sql
+  SELECT p.productCode, p.productName, p.quantityInStock, IFNULL(s.totalSold, 0) AS totalSold
+  FROM products p
+  LEFT JOIN (
+    SELECT od.productCode, SUM(od.quantityOrdered) AS totalSold
+    FROM orderdetails od
+    WHERE od.orderDate > DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+    GROUP BY od.productCode
+  ) s ON p.productCode = s.productCode
+  WHERE IFNULL(s.totalSold, 0) < 10;
+  ```
