@@ -1,0 +1,76 @@
+### Key Insights
+
+1. **Inventory Distribution:**
+   - Total products: 110
+   - North warehouse: 25 products (72% capacity)
+   - East warehouse: 38 products (67% capacity)
+   - West warehouse: 24 products (50% capacity)
+   - South warehouse: 23 products (75% capacity)
+
+2. **Warehouse Utilization:**
+   - The West warehouse is significantly underutilized at 50% capacity compared to others.
+
+3. **Sales vs. Inventory:**
+   - Poor sales performance with 99 products having more inventory than sales.
+   - The product "1985 Toyota Supra" has no sales at all.
+
+### Recommendations
+
+#### 1. Consider Closing the West Warehouse
+The West warehouse is underutilized with only 50% capacity and holds the second-lowest number of products (24). Closing this warehouse and redistributing its inventory to the other three warehouses could improve overall efficiency and reduce costs. 
+
+**Redistribution Plan:**
+- North warehouse can absorb additional products up to 28% capacity.
+- East warehouse can absorb additional products up to 33% capacity.
+- South warehouse can absorb additional products up to 25% capacity.
+
+Given the North and South warehouses have similar capacity percentages and the East warehouse is slightly lower, consider distributing the West warehouse's products evenly among them to balance the load.
+
+#### 2. Addressing Poor Sales and Overstocked Products
+With 99 products having higher inventory than sales, it's crucial to identify which products are contributing most to the excess inventory and develop a strategy to manage these items.
+
+**Action Plan:**
+- **Promotions and Discounts:** Implement promotions or discounts to accelerate the sales of overstocked items.
+- **Product Reviews:** Evaluate if certain products, like the "1985 Toyota Supra" with no sales, should be discontinued or replaced with more in-demand items.
+- **Inventory Adjustment:** Adjust order quantities to better match demand, reducing future overstock situations.
+
+### Detailed Query Results
+
+1. **Warehouse Product Count and Capacity Utilization:**
+   ```sql
+   SELECT p.warehouseCode, w.warehouseName, COUNT(p.productCode) AS productCount, w.warehousePctCap
+   FROM products p
+   JOIN warehouses w ON p.warehouseCode = w.warehouseCode
+   GROUP BY p.warehouseCode, w.warehouseName, w.warehousePctCap;
+   ```
+
+   | warehouseCode | warehouseName | productCount | warehousePctCap |
+   | --------------| --------------| -------------| ----------------|
+   | North         | North         | 25           | 72              |
+   | East          | East          | 38           | 67              |
+   | West          | West          | 24           | 50              |
+   | South         | South         | 23           | 75              |
+
+2. **Sales Performance of Products:**
+   ```sql
+   SELECT p.productCode, p.productName, p.quantityInStock, IFNULL(s.totalSold, 0) AS totalSold
+   FROM products p
+   LEFT JOIN (
+     SELECT od.productCode, SUM(od.quantityOrdered) AS totalSold
+     FROM orderdetails od
+     GROUP BY od.productCode
+   ) s ON p.productCode = s.productCode;
+   ```
+
+   **Example Outcome (summarized):**
+   - Products with higher inventory than sales: 99 products.
+   - Product "1985 Toyota Supra": No sales.
+
+### Final Recommendations
+
+1. **Close the West Warehouse:** Redistribute its inventory to the North, East, and South warehouses to utilize space more efficiently and reduce operational costs.
+
+2. **Manage Overstocked Products:**
+   - Conduct promotions and discounts to clear excess inventory.
+   - Review and discontinue products with no or very low sales, like the "1985 Toyota Supra".
+   - Adjust future inventory orders to better align with sales trends and avoid overstocking.
